@@ -1,0 +1,3 @@
+requires = "str ocamlbuild"
+archive(byte) = "namespaces.cma"
+archive(native) = "namespaces.cmxa"

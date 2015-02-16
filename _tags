@@ -1,0 +1,2 @@
+<*.ml*>: safe_string, package(ocamlbuild)
+"scratch": -traverse
