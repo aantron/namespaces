@@ -31,5 +31,5 @@ It is as if you had written
             module Reactive = (* client/ui/reactive.ml *)
         end
 
-        include (* client.ml *)
+        include (* client/client.ml *)
     end
