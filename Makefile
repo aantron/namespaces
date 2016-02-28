@@ -17,7 +17,7 @@ install : uninstall build
 	ocamlfind install $(PACKAGE) src/META $(INSTALL) _build/src/namespaces.a
 
 test : install
-	make -C test test
+	make -C test
 
 uninstall :
 	ocamlfind remove $(PACKAGE)

@@ -1,2 +1,2 @@
-"namespace" or "namespace/nested": include, namespace
-"not_namespace": include
+<**/*>: include
+<src/namespace/**> or <src/other_namespace/**>: namespace

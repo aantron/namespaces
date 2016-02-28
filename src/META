@@ -1,3 +1,5 @@
+version = "0.5"
+description = "Directory-based module hierarchy"
 requires = "str ocamlbuild"
 archive(byte) = "namespaces.cma"
 archive(native) = "namespaces.cmxa"

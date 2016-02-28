@@ -1,3 +1,6 @@
+(* This file is part of Namespaces, distributed under the terms of the 2-clause
+   BSD license. See https://github.com/aantron/namespaces. *)
+
 (** [ocamlbuild] namespaces plugin. This plugin turns directories in the source
     tree into namespace modules. For example:
 
@@ -29,13 +32,15 @@
 
 open Ocamlbuild_plugin
 
+
+
 (** {1 Generated files} *)
 
 (** The plugin does not automatically detect generated [.ml] and [.mli] files in
     namespaces. If some of your files are generated, you must describe the
     generator to the plugin. The syntax is the same as for [ocamlbuild] rule
     dependencies and products. For example, the description of [ocamllex] is
-    [("%.mll", ["%.ml"])].
+    ["%.mll", ["%.ml"]].
  *)
 type generator = string * string list
 
@@ -44,6 +49,8 @@ val ocamlyacc : generator
 
 (** The list [[ocamllex; ocamlyacc]]. *)
 val builtin_generators : generator list
+
+
 
 (** {1 Plugin} *)
 
@@ -55,7 +62,9 @@ val handler :
   ?generators:generator list ->
   ?filter:(string -> string option) -> hook -> unit
 
-(** {1 Utilities} *)
+
+
+(** {1 Debugging} *)
 
 (** Type of a file that has been indexed by the plugin during its scan of the
     source tree. [file] can represent a module, interface, or namespace. In the
@@ -76,12 +85,3 @@ type file =
 (** Calls the given function for each [.ml] file, [.mli] file, and namespace in
     the source tree. Must be called in the [After_rules] hook. *)
 val iter : ([ `Module | `Interface | `Namespace ] * file -> unit) -> unit
-
-(** Gives each file that has the same (original) name as its containing
-    namespace the tag [namespace_level]. This causes the module it produces to
-    be included in the namespace module (using [include]). Must be called in the
-    [After_rules] hook. For example, if [foo/bar/] is a namespace directory, and
-    there is a file [foo/bar/bar.ml], the members of [Foo.Bar.Bar] will become
-    members of [Foo.Bar]. See the main documentation for more information about
-    [namespace_level]. *)
-val include_files_sharing_namespace_title : unit -> unit
