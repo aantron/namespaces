@@ -6,8 +6,11 @@
 
 **Namespaces** helps you organize your code. It is an [Ocamlbuild][ocamlbuild]
 plugin that turns directories in your source tree into scoped OCaml modules.
+You get a nice, logical, and predictable structure, and you don't have to worry
+about duplicate filenames anymore. It's the sane file naming convention that
+most other languages have always had.
 
-So, if you have:
+If you have:
 
 ```
 my_project
@@ -23,7 +26,9 @@ my_project
         +-- client.ml
 ```
 
-Your project will get a module structure that looks as if you had written this:
+You will be able to access these modules as `Server.Foo`, `Client.Foo`, and
+`Client.Ui.Reactive`. Your project will get a module structure that works as if
+you had written:
 
 ```ocaml
 module Server =
@@ -46,18 +51,18 @@ struct
 end
 ```
 
-You can now access these modules as `Server.Foo` or `Client.Ui.Reactive`. Within
-a module, you don't have to (indeed, must not) qualify sibling module names:
-from `Server.Foo`, you access `Server.Bar` as just `Bar`. You can access
-children and nephews, but cannot access parents.
-
-Note that there is no conflict between `server/foo.ml` and `client/foo.ml`,
-since there is no globally-visible module `Foo`, like there would be without
+There is no conflict between `server/foo.ml` and `client/foo.ml`, because there
+is no globally-visible module `Foo` – like there would have been without
 Namespaces.
 
-The usual dependency restrictions on OCaml modules apply: there must not be any
-dependency cycles. Siblings must depend on each other in some order, and each
-parent module depends on all of its child modules.
+Within a module, you don't have to (indeed, must not) qualify sibling module
+names: from `Server.Foo`, you access `Server.Bar` as just `Bar`. You can access
+children and nephews, but cannot access parents.
+
+The usual dependency restrictions between OCaml modules apply: there must not be
+any dependency cycles. Siblings, if they depend on each other, must depend on
+each other in some order, and each parent module depends on all of its child
+modules.
 
 The modules are composed with `-no-alias-deps`, so depending on a directory
 module does not automatically pull in all of its descendants, unless they are
@@ -73,11 +78,11 @@ actually used.
 
 2. Add it to your build system.
 
-   - If using Ocamlbuild, create `myocamlbuild.ml`, make it look like this:
+   - If using Ocamlbuild, create `myocamlbuild.ml`, and make it look like this:
 
             let () = Ocamlbuild_plugin.dispatch Namespaces.handler
 
-     and invoke it with
+     Invoke Ocamlbuild with:
 
             ocamlbuild -use-ocamlfind -plugin-tag "package(namespaces)"
 
@@ -122,7 +127,7 @@ generates `.ml` and `.mli` files from `.rpc` files,
         Ocamlbuild_plugin.dispatch
             (Namespaces.handler ~generators:["%.rpc", ["%.ml"; "%.mli"]])
 
-The default value of [~generators] is [Namespaces.builtin_generators], which has
+The default value of `~generators` is `Namespaces.builtin_generators`, which has
 rules for `ocamllex` and `ocamlyacc`.
 
 
