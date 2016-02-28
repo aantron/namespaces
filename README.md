@@ -1,4 +1,4 @@
-# Namespaces for OCaml [![version 0.6][version]][releases] [![BSD license][license-img]][license] [![Travis status][travis-img]][travis]
+# Namespaces [![version 0.6][version]][releases] [![BSD license][license-img]][license] [![Travis status][travis-img]][travis]
 
 [version]:     https://img.shields.io/badge/version-0.5-blue.svg
 [releases]:    https://github.com/aantron/namespaces/releases
@@ -6,31 +6,23 @@
 [travis]:      https://travis-ci.org/aantron/namespaces/branches
 [travis-img]:  https://img.shields.io/travis/aantron/namespaces/master.svg
 
-**Namespaces** helps you organize your code. It is an [Ocamlbuild][ocamlbuild]
-plugin that turns directories in your source tree into scoped OCaml modules.
-You get a nice, logical, and predictable structure, and you don't have to worry
-about duplicate filenames anymore. It's the sane file naming convention that
-most other languages have always had.
+Ever wish `src/server/foo.ml` was module `Server.Foo` and not just `Foo`?
 
-If you have:
+Who likes to name it `src/server/server_foo.ml`, just to avoid naming conflicts?
 
-```
-my_project
-+-- src
-    |-- server
-    |   |-- foo.ml
-    |   +-- bar.ml
-    +-- client
-        |-- foo.ml
-        |-- bar.ml
-        |-- ui
-        |   +-- reactive.ml
-        +-- client.ml
-```
+*Namespaces* is an Ocamlbuild plugin that turns directories in your source tree
+into scoped OCaml modules. You get a nice, logical, and predictable structure,
+and you don't have to worry about duplicate filenames anymore. It's the sane
+file naming convention that most other languages have always had.
 
-You will be able to access these modules as `Server.Foo`, `Client.Foo`, and
-`Client.Ui.Reactive`. Your project will get a module structure that works as if
-you had written:
+If you have the directory structure on the left, you will get the OCaml modules
+on the right:
+
+![Effect summary][summary]
+
+[summary]: https://github.com/aantron/namespaces/blob/master/src/summary.png
+
+The module structure works as if you had written:
 
 ```ocaml
 module Server =
@@ -54,8 +46,7 @@ end
 ```
 
 There is no conflict between `server/foo.ml` and `client/foo.ml`, because there
-is no globally-visible module `Foo` – like there would have been without
-Namespaces.
+is no globally-visible module `Foo`.
 
 Within a module, you don't have to (indeed, must not) qualify sibling module
 names: from `Server.Foo`, you access `Server.Bar` as just `Bar`. You can access
@@ -71,6 +62,8 @@ module does not automatically pull in all of its descendants, unless they are
 actually used.
 
 
+
+<br>
 
 ## Instructions
 
@@ -118,6 +111,8 @@ actually used.
 
 
 
+<br>
+
 ## Generated files
 
 Namespaces has trouble with generated files, such as `.ml` files generated from
@@ -130,16 +125,17 @@ generates `.ml` and `.mli` files from `.rpc` files,
             (Namespaces.handler ~generators:["%.rpc", ["%.ml"; "%.mli"]])
 
 The default value of `~generators` is `Namespaces.builtin_generators`, which has
-rules for `ocamllex` and `ocamlyacc`.
+rules for `ocamllex` and `ocamlyacc`. See [`namespaces.mli`][mli] for details.
+
+[mli]: https://github.com/aantron/namespaces/blob/master/src/namespaces.mli
 
 
+
+<br>
 
 ## License
 
 Namespaces is distributed under the terms of the 2-clause
 [BSD license][license].
 
-
-
-[ocamlbuild]: https://github.com/gasche/manual-ocamlbuild
 [license]:    https://opensource.org/licenses/BSD-2-Clause
