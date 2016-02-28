@@ -1,8 +1,10 @@
-# Namespaces for OCaml [![version 0.6][version]][releases] [![BSD license][license-img]][license]
+# Namespaces for OCaml [![version 0.6][version]][releases] [![BSD license][license-img]][license] [![Travis status][travis-img]][travis]
 
 [version]:     https://img.shields.io/badge/version-0.5-blue.svg
 [releases]:    https://github.com/aantron/namespaces/releases
 [license-img]: https://img.shields.io/badge/license-BSD-blue.svg
+[travis]:      https://travis-ci.org/aantron/namespaces/branches
+[travis-img]:  https://img.shields.io/travis/aantron/namespaces/master.svg
 
 **Namespaces** helps you organize your code. It is an [Ocamlbuild][ocamlbuild]
 plugin that turns directories in your source tree into scoped OCaml modules.

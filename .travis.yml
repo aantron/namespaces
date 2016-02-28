@@ -1,0 +1,19 @@
+env:
+  - PPA=avsm/ocaml42+opam12
+
+before_script:
+  - sudo add-apt-repository -y ppa:$PPA
+  - sudo apt-get update
+  - sudo apt-get install ocaml-nox opam
+  - ocaml -version
+  - opam init -y
+  - eval `opam config env`
+
+script:
+  - opam install -y ocamlfind
+  - make build
+  - opam remove ocamlfind
+  - make clean
+  - ln -s src/opam
+  - opam pin add -y .
+  - make -C test
