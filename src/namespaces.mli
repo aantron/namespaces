@@ -27,9 +27,6 @@
     ocamlbuild manual}.
  *)
 
-(* TODO Detailed documentation link. *)
-(* TODO Add link to home page in documentation. *)
-
 open Ocamlbuild_plugin
 
 (** {1 Generated files} *)

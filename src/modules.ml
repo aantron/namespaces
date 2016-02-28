@@ -208,9 +208,6 @@ let build_native_and_or_bytecode () =
       | _                         -> native, bytecode)
     (false, false)
 
-(* TODO Can the inconsistent implementation assumption problem be solved by
-   simply making all namespace files depend on cmx/o files directly instead, as
-   was the case before libraries and digest files were added? *)
 let digest_dependencies (_, members) =
   let build_native, build_bytecode = build_native_and_or_bytecode () in
 
@@ -287,8 +284,6 @@ let library_file_contents_by_final_base_path path =
     |> fun s -> Some (s ^ "\n")
   with Not_found -> None
 
-(* TODO Perhaps it is better to store namespaces reversed, or at least use
-   reversed keys into Modules.namespace_scopes. *)
 let resolve (referrer : file) (referent : string) : string =
   let rec loop self = function
     | []                              -> referent

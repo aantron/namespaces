@@ -8,13 +8,16 @@ INSTALL := \
 CFLAGS := -bin-annot
 OCAMLBUILD := ocamlbuild -use-ocamlfind -cflags $(CFLAGS)
 
-.PHONY : build install uninstall clean
+.PHONY : test build install uninstall clean
 
 build :
 	$(OCAMLBUILD) src/namespaces.cma src/namespaces.cmxa
 
 install : uninstall build
 	ocamlfind install $(PACKAGE) src/META $(INSTALL) _build/src/namespaces.a
+
+test : install
+	make -C test test
 
 uninstall :
 	ocamlfind remove $(PACKAGE)

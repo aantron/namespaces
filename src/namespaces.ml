@@ -8,13 +8,6 @@ let builtin_generators = Generators.builtin
 
 let identity_filter = fun s -> Some s
 
-let handler ?(generators = Generators.builtin) ?(filter = identity_filter) =
-  function
-  | After_rules ->
-    Modules.scan (Generators.parse generators) filter;
-    Rules.add_all ()
-  | _           -> ()
-
 type file = Modules.file =
   {original_name : string;
    prefixed_name : string;
@@ -37,3 +30,11 @@ let include_files_sharing_namespace_title () =
           tag_file (Modules.original_path file) [Modules.namespace_level_tag]
         | _ -> ())
     | _ -> ())
+
+let handler ?(generators = Generators.builtin) ?(filter = identity_filter) =
+  function
+  | After_rules ->
+    Modules.scan (Generators.parse generators) filter;
+    Rules.add_all ();
+    include_files_sharing_namespace_title ()
+  | _           -> ()

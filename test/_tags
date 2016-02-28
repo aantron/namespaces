@@ -1,0 +1,2 @@
+"namespace" or "namespace/nested": include, namespace
+"not_namespace": include
