@@ -1,26 +1,23 @@
 PACKAGE := namespaces
-TARGETS := namespaces.cma namespaces.cmxa namespaces.cmi
+TARGETS := src/namespaces.cma src/namespaces.cmxa src/namespaces.cmi
 
-INSTALL := $(foreach target,$(TARGETS),_build/$(target)) namespaces.mli
+INSTALL := \
+	$(foreach target,$(TARGETS),_build/$(target)) src/namespaces.mli \
+	_build/src/namespaces.cmt _build/src/namespaces.cmti
 
-OCAMLBUILD := ocamlbuild -use-ocamlfind
+CFLAGS := -bin-annot
+OCAMLBUILD := ocamlbuild -use-ocamlfind -cflags $(CFLAGS)
 
-.PHONY : all install uninstall clean docs internal-docs
+.PHONY : build install uninstall clean
 
-all :
-	$(OCAMLBUILD) namespaces.cma namespaces.cmxa
+build :
+	$(OCAMLBUILD) src/namespaces.cma src/namespaces.cmxa
 
-install :
-	ocamlfind install $(PACKAGE) META $(INSTALL) _build/namespaces.a
+install : uninstall build
+	ocamlfind install $(PACKAGE) src/META $(INSTALL) _build/src/namespaces.a
 
 uninstall :
 	ocamlfind remove $(PACKAGE)
 
 clean :
 	ocamlbuild -clean
-
-docs :
-	$(OCAMLBUILD) docs.docdir/index.html
-
-internal-docs :
-	$(OCAMLBUILD) internal.docdir/index.html
