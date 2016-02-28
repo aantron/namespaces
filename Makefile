@@ -24,3 +24,4 @@ uninstall :
 
 clean :
 	ocamlbuild -clean
+	make -C test clean
