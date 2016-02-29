@@ -127,7 +127,7 @@ generates `.ml` and `.mli` files from `.rpc` files,
 The default value of `~generators` is `Namespaces.builtin_generators`, which has
 rules for `ocamllex` and `ocamlyacc`. See [`namespaces.mli`][mli] for details.
 
-[mli]: https://github.com/aantron/namespaces/blob/master/src/namespaces.mli
+[mli]: https://github.com/aantron/namespaces/blob/master/src/namespaces.mli#L37
 
 
 
