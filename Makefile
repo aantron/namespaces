@@ -8,6 +8,8 @@ INSTALL := \
 CFLAGS := -bin-annot
 OCAMLBUILD := ocamlbuild -use-ocamlfind -cflags $(CFLAGS)
 
+for_tests = for TEST in `ls test` ; do $1 ; done
+
 .PHONY : test build install uninstall clean
 
 build :
@@ -17,11 +19,11 @@ install : uninstall build
 	ocamlfind install $(PACKAGE) src/META $(INSTALL) _build/src/namespaces.a
 
 test : install
-	make -C test
+	$(call for_tests,make -C test/$$TEST)
 
 uninstall :
 	ocamlfind remove $(PACKAGE)
 
 clean :
 	ocamlbuild -clean
-	make -C test clean
+	$(call for_tests,make -C test/$$TEST clean)
