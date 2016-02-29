@@ -97,7 +97,7 @@ actually used.
 
             OCamlVersion:           >= 4.01
             AlphaFeatures:          ocamlbuild_more_args
-            XOCamlbuildPluginTags:  package(bisect_ppx.plugin)
+            XOCamlbuildPluginTags:  package(namespaces)
 
      and re-run `oasis setup`.
 
