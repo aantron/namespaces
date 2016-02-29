@@ -40,11 +40,15 @@ open Ocamlbuild_plugin
     namespaces. If some of your files are generated, you must describe the
     generator to the plugin. The syntax is the same as for [ocamlbuild] rule
     dependencies and products. For example, the description of [ocamllex] is
-    ["%.mll", ["%.ml"]].
+    ["%.mll", ["%.ml"]]. Note that the outer brackets are part of `ocamldoc`
+    code style syntax, not OCaml list syntax!
  *)
 type generator = string * string list
 
+(** ["%.mll", ["%.ml"]]. *)
 val ocamllex : generator
+
+(** ["%.mly", ["%.ml"]]. *)
 val ocamlyacc : generator
 
 (** The list [[ocamllex; ocamlyacc]]. *)
