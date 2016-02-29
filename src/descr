@@ -1,8 +1,9 @@
 Turn directories into OCaml modules
 
 An Ocamlbuild plugin that turns directories tagged with "namespace" into a
-module hierarchy. File names become scoped, so you can have the same filename in
-multiple directories. So, if you have
+nested module hierarchy. Each directory becomes a module. Filenames become
+scoped, so you can have the same filename in multiple directories. So, if you
+have
 
     server
     |-- foo.ml
