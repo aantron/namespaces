@@ -59,7 +59,7 @@ modules.
 
 The modules are composed with `-no-alias-deps`, so depending on a directory
 module does not automatically pull in all of its descendants, unless they are
-actually used.
+actually used. This also means that Namespaces requires OCaml 4.02 or higher.
 
 
 
@@ -95,7 +95,7 @@ actually used.
 
      Then, add this to the top of your OASIS file:
 
-            OCamlVersion:           >= 4.01
+            OCamlVersion:           >= 4.02
             AlphaFeatures:          ocamlbuild_more_args
             XOCamlbuildPluginTags:  package(namespaces)
 
