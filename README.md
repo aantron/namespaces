@@ -133,6 +133,17 @@ rules for `ocamllex` and `ocamlyacc`. See [`namespaces.mli`][mli] for details.
 
 <br>
 
+## The Future
+
+An Ocamlbuild plugin is by no means the best way, ideally, to deal with the
+problem of structuring modules in OCaml. I am releasing this, in part, to
+advance the discussion. My hope is that after some time, we will have a more
+conclusive solution integrated into the OCaml tool chain.
+
+
+
+<br>
+
 ## License
 
 Namespaces is distributed under the terms of the 2-clause
