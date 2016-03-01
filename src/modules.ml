@@ -61,7 +61,7 @@ let scan_tree =
       (tags_of_pathname directory_path) (Tags.of_list [namespace_tag]) in
 
   let make_file directory namespace name =
-    let prefixed_name = String.concat "_" (namespace @ [name]) in
+    let prefixed_name = String.concat "__" (namespace @ [name]) in
     {original_name = name; prefixed_name; directory = directory;
      namespace = namespace} in
 
@@ -176,17 +176,17 @@ let digest_file base_name =
   sprintf "%s.digest" base_name
 
 let alias_container_module base_name =
-  sprintf "%s_aliases_" (module_name_of_pathname base_name)
+  sprintf "%s__aliases_" (module_name_of_pathname base_name)
 
 let alias_group_module base_name for_module =
-  sprintf "%s_aliases__for_%s_"
+  sprintf "%s__aliases__for_%s_"
     (module_name_of_pathname base_name) (module_name_of_pathname for_module)
 
 let alias_export_module base_name =
-  sprintf "%s_aliases__export_" (module_name_of_pathname base_name)
+  sprintf "%s__aliases__export_" (module_name_of_pathname base_name)
 
 let alias_container_file base_name =
-  sprintf "%s_aliases_.ml" base_name
+  sprintf "%s__aliases_.ml" base_name
 
 let namespace_file base_name =
   sprintf "%s.ml" base_name
