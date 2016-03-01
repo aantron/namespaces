@@ -79,7 +79,7 @@ actually used. This also means that Namespaces requires OCaml 4.02 or higher.
 
      Invoke Ocamlbuild with:
 
-            ocamlbuild -use-ocamlfind -plugin-tag "package(namespaces)"
+          ocamlbuild -use-ocamlfind -plugin-tag "package(namespaces)"
 
      If you already have `myocamlbuild.ml`, call `Namespaces.handler` before or
      after your hook that you pass to `dispatch`.
@@ -87,17 +87,17 @@ actually used. This also means that Namespaces requires OCaml 4.02 or higher.
    - If using OASIS, find the bottom of your `myocamlbuild.ml` file, and replace
      the call to `dispatch` with this:
 
-            let () =
-              dispatch
-                (MyOCamlbuildBase.dispatch_combine
-                   [MyOCamlbuildBase.dispatch_default conf package_default;
-                    Namespaces.dispatch])
+          let () =
+            dispatch
+              (MyOCamlbuildBase.dispatch_combine
+                 [MyOCamlbuildBase.dispatch_default conf package_default;
+                  Namespaces.handler])
 
      Then, add this to the top of your OASIS file:
 
-            OCamlVersion:           >= 4.02
-            AlphaFeatures:          ocamlbuild_more_args
-            XOCamlbuildPluginTags:  package(namespaces)
+          OCamlVersion:           >= 4.02
+          AlphaFeatures:          ocamlbuild_more_args
+          XOCamlbuildPluginTags:  package(namespaces)
 
      and re-run `oasis setup`.
 
@@ -106,6 +106,7 @@ actually used. This also means that Namespaces requires OCaml 4.02 or higher.
    can add this to your `_tags` file:
 
         <src/*/**>: namespace
+        <src/**>: include
 
 4. Enjoy!
 

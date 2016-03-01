@@ -1,0 +1,15 @@
+OASISFormat: 0.4
+Name:        namespaces-oasis-test
+Version:     0.1
+Synopsis:    Making sure OASIS build instructions work
+Authors:     Anton Bachin
+License:     BSD-2-clause
+
+OCamlVersion:           >= 4.02
+AlphaFeatures:          ocamlbuild_more_args
+XOCamlbuildPluginTags:  package(namespaces)
+
+Executable main
+  Path:       src
+  BuildTools: ocamlbuild
+  MainIs:     main.ml

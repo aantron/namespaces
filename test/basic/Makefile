@@ -1,7 +1,8 @@
 OCAMLBUILD := \
 	ocamlbuild -use-ocamlfind -plugin-tag "package(namespaces)" -no-links
 
-.PHONY : test
+.PHONY : test clean
+
 test :
 	make clean
 	$(OCAMLBUILD) main.native --
@@ -15,6 +16,5 @@ test :
 	$(OCAMLBUILD) main.native --
 	$(OCAMLBUILD) main.native --
 
-.PHONY : clean
 clean :
 	ocamlbuild -clean
