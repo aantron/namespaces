@@ -5,13 +5,25 @@
 
 type file =
   {original_name : string;
+   (** The original basename of the file or directory, including extension, if
+       any. For example, [server/foo.ml] has this set to ["foo.ml"]. *)
    prefixed_name : string;
+   (** The prefixed name of the file or directory. For example, [server/foo.ml]
+       has this field set to [server__foo.ml]. *)
    directory     : string list;
-   namespace     : string list}
+   (** The path, relative to the project root, in which this file or directory
+       was found. For example, [server/foo.ml] has this set to [["server"]]. *)
+   namespace     : string list
+   (** The module path in which this file's or directory's module is aliased.
+       For example, [server/foo] is has this set to ["Server"]. *)}
 
 type namespace
 
 val scan : Generators.parsed -> (string -> string option) -> unit
+(** Scans the source tree for directories to become namespaces and files to
+    become namespace members, and notes the results as values of type [file] in
+    a state variable inside this module. *)
+
 val iter : ([ `Module | `Interface | `Namespace ] * file -> unit) -> unit
 
 val namespace_level_tag : string

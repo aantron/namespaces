@@ -55,16 +55,35 @@ let module_path {original_name; namespace; _} =
 let member_module_files {modules; namespaces; _} =
   (List.map fst namespaces) @ modules
 
+(* Recursively traverses the source tree. Keeps track of the current filesystem
+   path as a list of strings. Keeps track of the current namespace path in the
+   same way. The namespace path is extended when a directory is encountered that
+   has the "namespace" tag set.
+
+   Notes all [.ml] and [.mli] files and "namespace" directories found by
+   creating records of type [file] for them. Organizes these into a forest of
+   records of type [namespace], represented by a single top-level record of type
+   [namespace_members]. This top-level record represents the top-level modules
+   and namespaces in the project.
+
+   Generated [.ml] and [.mli] files are part of the project, but cannot be found
+   in the source tree. These are discovered through the rules passed in the
+   [generators] argument to [scan_tree]. *)
 let scan_tree =
+  (* True iff the given directory is tagged with "namespace". *)
   let is_namespace directory_path =
     Tags.does_match
       (tags_of_pathname directory_path) (Tags.of_list [namespace_tag]) in
 
-  let make_file directory namespace name =
+  (* Constructs a [file] record when given the current filesystem and module
+     paths, and the basename of a file or directory. *)
+  let make_file_record directory namespace name =
     let prefixed_name = String.concat "__" (namespace @ [name]) in
     {original_name = name; prefixed_name; directory = directory;
      namespace = namespace} in
 
+  (* Given a [namespace_members], eliminates duplicates in its [modules] and
+     [interfaces] fields. *)
   let unique {modules; interfaces; namespaces} =
     let compare_files {original_name = name; _} {original_name = name'; _} =
       String.compare name name' in
@@ -100,7 +119,7 @@ let scan_tree =
         members_acc
 
     and create_namespace directory namespace entry entry_path =
-      let file = make_file directory namespace entry in
+      let file = make_file_record directory namespace entry in
       let nested_namespace = namespace @ [original_module file] in
       let members = traverse entry_path nested_namespace empty_members in
       (file, unique members)
@@ -115,7 +134,7 @@ let scan_tree =
         []
       |> List.fold_left
         (fun members_acc generated_file ->
-          let file = make_file directory namespace generated_file in
+          let file = make_file_record directory namespace generated_file in
           if Filename.check_suffix generated_file ".ml" then
             {members_acc with modules = file::members_acc.modules}
           else if Filename.check_suffix generated_file ".mli" then
@@ -135,15 +154,28 @@ let iter f =
       members.namespaces in
   traverse !tree
 
+(* Maps namespaced file paths to [file] records. For example, for
+   [server/foo.ml], the key is ["server/server__foo.ml"]. *)
 let renamed_files : (string, file) Hashtbl.t =
   Hashtbl.create 512
+
+(* Maps namespaced namespace directories to [namespace] records. For example,
+   for [server/api], the key is ["server/server__api"]. *)
 let namespace_directory_map : (string, namespace) Hashtbl.t =
   Hashtbl.create 32
+
+(** Maps namespace directory namespace paths to [namespace] records. For
+    example, for [server/api], the key is [["Server"; "Api"]]. *)
 let namespace_module_map : (string list, namespace) Hashtbl.t =
   Hashtbl.create 32
+
 let namespace_libraries : (string, string list) Hashtbl.t =
   Hashtbl.create 32
 
+(* For each [.ml] or [.mli] file found during the source tree scan, if its
+   namespaced name differs from its original name, adds it to [renamed_files].
+   The condition holds for files inside namespaces, and doesn't hold for files
+   representing top-level modules. *)
 let index_renamed_files () =
   iter
     (function
@@ -156,6 +188,7 @@ let file_by_renamed_path s =
   try Some (Hashtbl.find renamed_files s)
   with Not_found -> None
 
+(* Populates [namespace_directory_map] and [namespace_module_map]. *)
 let index_namespaces () =
   let rec traverse members =
     members.namespaces |> List.iter
@@ -408,6 +441,8 @@ let assemble_libraries () =
       List.iter (fun target -> tag_file target [tag_name]) binary_targets)
     namespace_libraries
 
+(* For each module [Foo] that is not a top-level module, hides the module from
+   Ocamlbuild by extending [Options.ignore_list]. *)
 let hide_original_nested_modules () =
   let top_level_names =
     member_module_files !tree
