@@ -1,2 +1,1 @@
-let () =
-  Ocamlbuild_plugin.dispatch Namespaces.handler
+../common/myocamlbuild.ml

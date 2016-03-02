@@ -10,6 +10,6 @@ AlphaFeatures:          ocamlbuild_more_args
 XOCamlbuildPluginTags:  package(namespaces)
 
 Executable main
-  Path:       src
+  Path:       src/not_namespace
   BuildTools: ocamlbuild
-  MainIs:     main.ml
+  MainIs:     foo.ml

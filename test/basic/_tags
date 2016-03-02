@@ -1,2 +1,1 @@
-<**/*>: include
-<src/namespace/**> or <src/other_namespace/**>: namespace
+../common/_tags

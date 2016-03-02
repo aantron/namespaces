@@ -17,5 +17,5 @@ true: annot, bin_annot
 # Executable main
 # OASIS_STOP
 
-<src/**>: include
-<src/*/**>: namespace
+<**/*>: include
+<src/namespace/**> or <src/namespace_2/**>: namespace
