@@ -10,11 +10,11 @@ before_script:
   - eval `opam config env`
 
 script:
-  - opam install -y ocamlfind
-  - make build
-  - opam remove ocamlfind
+  - opam install -y ocamlfind oasis
+  - make build test
+  - opam remove -y ocamlfind
   - make clean
   - ln -s src/opam
   - opam pin add -y .
-  - opam install -y oasis
+  - opam install oasis -y
   - for TEST in `ls test` ; do make -C test/$TEST ; done

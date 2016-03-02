@@ -5,6 +5,8 @@ INSTALL := \
 	$(foreach target,$(TARGETS),_build/$(target)) src/namespaces.mli \
 	_build/src/namespaces.cmt _build/src/namespaces.cmti
 
+DEV_INSTALL_DIR := _findlib
+
 CFLAGS := -bin-annot
 OCAMLBUILD := ocamlbuild -use-ocamlfind -cflags $(CFLAGS)
 
@@ -18,12 +20,17 @@ build :
 install : uninstall build
 	ocamlfind install $(PACKAGE) src/META $(INSTALL) _build/src/namespaces.a
 
-test : install
-	$(call for_tests,make -C test/$$TEST)
-
 uninstall :
 	ocamlfind remove $(PACKAGE)
+
+test : build
+	mkdir -p $(DEV_INSTALL_DIR)
+	export OCAMLPATH=`pwd`/$(DEV_INSTALL_DIR):$$OCAMLPATH && \
+	export OCAMLFIND_DESTDIR=`pwd`/$(DEV_INSTALL_DIR) && \
+	make install && \
+	$(call for_tests,make -C test/$$TEST)
 
 clean :
 	ocamlbuild -clean
 	$(call for_tests,make -C test/$$TEST clean)
+	rm -rf $(DEV_INSTALL_DIR)
