@@ -1,4 +1,4 @@
-# Namespaces [![version 0.6][version]][releases] [![BSD license][license-img]][license] [![Travis status][travis-img]][travis]
+# Namespaces &nbsp; [![version 0.6][version]][releases] [![BSD license][license-img]][license] [![Travis status][travis-img]][travis]
 
 [version]:     https://img.shields.io/badge/version-0.5-blue.svg
 [releases]:    https://github.com/aantron/namespaces/releases
