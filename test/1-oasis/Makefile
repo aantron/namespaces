@@ -8,4 +8,4 @@ test : clean
 
 clean :
 	ocamlbuild -clean
-	rm -f setup.data setup.*
+	rm -f setup.data setup.* *.byte

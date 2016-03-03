@@ -11,7 +11,11 @@ CFLAGS := -bin-annot
 OCAMLBUILD := ocamlbuild -use-ocamlfind -cflags $(CFLAGS)
 
 for_tests = \
-	for TEST in `ls test` ; do $1 ; if [ $$? -ne 0 ] ; then exit 1 ; fi ; done
+	for TEST in `ls test | grep -` ; \
+	do \
+		$1 ; \
+		if [ $$? -ne 0 ] ; then exit 1 ; fi ; \
+	done
 
 .PHONY : build
 build :
@@ -31,10 +35,16 @@ test : build
 
 .PHONY : one
 one : build
+	@echo
+	@echo Running test $(NAME)
+	@echo
 	@mkdir -p $(DEV_INSTALL_DIR)
-	export OCAMLPATH=`pwd`/$(DEV_INSTALL_DIR):$$OCAMLPATH && \
-	export OCAMLFIND_DESTDIR=`pwd`/$(DEV_INSTALL_DIR) && \
-	make install && \
+	@if [ -z $(OPAM_INSTALLATION) ] ; \
+	then \
+		export OCAMLPATH=`pwd`/$(DEV_INSTALL_DIR):$(OCAMLPATH) ; \
+		export OCAMLFIND_DESTDIR=`pwd`/$(DEV_INSTALL_DIR) ; \
+		make install || exit 1 ; \
+	fi ; \
 	make -C test/$(NAME)
 
 .PHONY : clean

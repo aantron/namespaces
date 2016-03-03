@@ -17,4 +17,4 @@ script:
   - ln -s src/opam
   - opam pin add -y .
   - opam install oasis -y
-  - for TEST in `ls test` ; do make -C test/$TEST ; done
+  - make test OPAM_INSTALLATION=yes
