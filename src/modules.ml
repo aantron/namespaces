@@ -194,14 +194,14 @@ let namespace_file base_name =
 let library_list_file base_name =
   sprintf "%s.mllib" base_name
 
-let build_native_and_or_bytecode () =
-  let extension s =
-    try
-      let index = (String.rindex s '.') + 1 in
-      let remainder_length = (String.length s) - index in
-      String.sub s index remainder_length
-    with Not_found -> "" in
+let extension s =
+  try
+    let index = (String.rindex s '.') + 1 in
+    let remainder_length = (String.length s) - index in
+    String.sub s index remainder_length
+  with Not_found -> ""
 
+let build_native_and_or_bytecode () =
   !Options.targets
   |> List.fold_left
     (fun (native, bytecode) target ->
@@ -394,11 +394,18 @@ let assemble_libraries () =
 
   mark_tag_used namespace_library_tag;
 
+  let is_binary target =
+    match extension target with
+    | "byte" | "native" -> true
+    | _ -> false in
+
+  let binary_targets = List.filter is_binary !Options.targets in
+
   Hashtbl.iter
     (fun base_path _ ->
       let tag_name = namespace_library_dependency_tag base_path in
       ocaml_lib ~tag_name base_path;
-      List.iter (fun target -> tag_file target [tag_name]) !Options.targets)
+      List.iter (fun target -> tag_file target [tag_name]) binary_targets)
     namespace_libraries
 
 let hide_original_nested_modules () =
