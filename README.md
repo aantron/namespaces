@@ -108,27 +108,12 @@ actually used. This also means that Namespaces requires OCaml 4.02 or higher.
         <src/*/**>: namespace
         <src/**>: include
 
-4. Enjoy!
+4. See [`manual.md`][manual] for instructions on building libraries and dealing
+   with generated files.
 
+5. Enjoy!
 
-
-<br>
-
-## Generated files
-
-Namespaces has trouble with generated files, such as `.ml` files generated from
-`.mll` files by `ocamllex`. If you have such files in your project, you need to
-tell Namespaces about the generator. For example, if you have a program that
-generates `.ml` and `.mli` files from `.rpc` files,
-
-    let () =
-        Ocamlbuild_plugin.dispatch
-            (Namespaces.handler ~generators:["%.rpc", ["%.ml"; "%.mli"]])
-
-The default value of `~generators` is `Namespaces.builtin_generators`, which has
-rules for `ocamllex` and `ocamlyacc`. See [`namespaces.mli`][mli] for details.
-
-[mli]: https://github.com/aantron/namespaces/blob/master/src/namespaces.mli#L37
+[manual]: https://github.com/aantron/namespaces/blob/master/manual.md
 
 
 
