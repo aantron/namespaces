@@ -41,3 +41,17 @@ let handler ?(generators = Generators.builtin) ?(filter = identity_filter) =
     Rules.add_all ();
     include_files_sharing_namespace_title ()
   | _           -> ()
+
+let delete_mllib_files () =
+  let rec traverse path =
+    path
+    |> Sys.readdir
+    |> Array.iter (fun entry ->
+      let path = Filename.concat path entry in
+      if Sys.is_directory path then
+        traverse path
+      else
+        if Filename.check_suffix entry ".mllib" then
+          Sys.remove path)
+  in
+  traverse Filename.current_dir_name

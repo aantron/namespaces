@@ -108,8 +108,9 @@ actually used. This also means that Namespaces requires OCaml 4.02 or higher.
         <src/*/**>: namespace
         <src/**>: include
 
-4. See [`manual.md`][manual] for instructions on building libraries and dealing
-   with generated files.
+4. If you are building a library, see additional instructions in
+   [`manual.md`][manual]. See also that file if you have generated files in your
+   project.
 
 5. Enjoy!
 

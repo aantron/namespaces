@@ -627,3 +627,6 @@ let () =
     (MyOCamlbuildBase.dispatch_combine
        [MyOCamlbuildBase.dispatch_default conf package_default;
         Namespaces.handler])
+
+let () =
+  Namespaces.delete_mllib_files ()

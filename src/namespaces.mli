@@ -66,6 +66,15 @@ val handler :
   ?generators:generator list ->
   ?filter:(string -> string option) -> hook -> unit
 
+(** Deletes all [.mllib] files in the source tree. This function is a workaround
+    for building libraries with OASIS. OASIS generates its own [.mllib] files.
+    To prevent them from being used, they should be deleted on each build by
+    calling this function in `myocamlbuild.ml`, e.g.:
+
+    {v
+    let () = Namespaces.delete_mllib_files () v} *)
+val delete_mllib_files : unit -> unit
+
 
 
 (** {1 Debugging} *)
