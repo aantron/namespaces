@@ -1,0 +1,4 @@
+setup.*
+*.mllib
+*.mldylib
+src/META

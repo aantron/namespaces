@@ -1,0 +1,24 @@
+OASISFormat: 0.4
+Name:        namespaces-oasis-lib-test
+Version:     0.1
+Synopsis:    Making sure OASIS build instructions work
+Authors:     Anton Bachin
+License:     BSD-2-clause
+BuildTools:  ocamlbuild
+Plugins:     META (0.3)
+
+OCamlVersion:           >= 4.02
+AlphaFeatures:          ocamlbuild_more_args
+XOCamlbuildPluginTags:  package(namespaces)
+
+Library lib_1
+  FindlibName:      namespaces-oasis-lib-test
+  Path:             src
+  Modules:          Lib_1
+  XMETADescription: lib_1
+
+Library lib_2
+  FindlibParent:    lib_1
+  Path:             src
+  Modules:          Lib_2
+  XMETADescription: lib_2
