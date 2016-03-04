@@ -1,0 +1,3 @@
+<**/*>: include
+<src/*/**> or <src/namespace_2/**>: namespace
+<src/*>: namespace_lib

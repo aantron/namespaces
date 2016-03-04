@@ -1,0 +1,9 @@
+package "first" (
+  archive(byte) = "lib_1.cma"
+  archive(native) = "lib_1.cmxa"
+)
+
+package "second" (
+  archive(byte) = "lib_2.cma"
+  archive(native) = "lib_2.cmxa"
+)
