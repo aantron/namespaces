@@ -5,6 +5,7 @@
 - [Building libraries](#Libraries)
   - [OASIS status](#LibrariesOASIS)
 - [Generated files](#Generated)
+- [Effect on separate compilation](#SeparateCompilation)
 
 
 
@@ -128,3 +129,32 @@ The default value of `~generators` is `Namespaces.builtin_generators`, which has
 rules for `ocamllex` and `ocamlyacc`. See [`namespaces.mli`][mli] for details.
 
 [mli]: https://github.com/aantron/namespaces/blob/master/src/namespaces.mli#L37
+
+
+
+<br>
+
+<a id="SeparateCompilation"></a>
+## Effect on separate compilation
+
+As currently implemented, grouping modules in a namespace causes recompilation
+of everything that depends on that namespace, each time one of the namespace
+child modules changes. However, only the children that are actually referenced
+by depending code are linked with that code. To illustrate, suppose there are
+modules
+
+```
+Namespace.Foo
+Namespace.Bar
+Main
+```
+
+and `Main` refers only to `Namespace.Foo`. `Main` could be in the same project,
+or `Namespace` might be packaged as a library, with `Main` in a different
+project.
+
+When an executable with `Main` is linked, only `Namespace.Foo` is included.
+However, if `Main` is in the same project as `Namespace`, then when *either*
+`Namespace.Foo` or `Namespace.Bar` is changed, `Main` is recompiled – even
+though that is not strictly necessary in the case `Namespace.Bar` is changed.
+This is a result of an imprecision in the current dependency analysis.
