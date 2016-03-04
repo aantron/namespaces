@@ -81,6 +81,12 @@ let long_name_rules () =
           build [[Modules.original_path file]]
           |> List.map Outcome.ignore_good |> ignore;
 
+          (* Transfer tags from the target to the link. *)
+          Modules.original_path file
+          |> tags_of_pathname
+          |> Tags.elements
+          |> tag_file (env prod);
+
           ln_s file.Modules.original_name (env prod)
       end in
 
