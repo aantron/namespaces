@@ -1,6 +1,6 @@
-# Namespaces &nbsp; [![version 0.6][version]][releases] [![BSD license][license-img]][license] [![Travis status][travis-img]][travis]
+# Namespaces &nbsp; [![version 0.5.1][version]][releases] [![BSD license][license-img]][license] [![Travis status][travis-img]][travis]
 
-[version]:     https://img.shields.io/badge/version-0.5-blue.svg
+[version]:     https://img.shields.io/badge/version-0.5.1-blue.svg
 [releases]:    https://github.com/aantron/namespaces/releases
 [license-img]: https://img.shields.io/badge/license-BSD-blue.svg
 [travis]:      https://travis-ci.org/aantron/namespaces/branches
