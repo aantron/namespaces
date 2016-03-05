@@ -8,19 +8,27 @@ let bprintf = Printf.bprintf
 
 (* User tags. *)
 let namespace_tag = "namespace"
+let namespace_with_name_tag = "namespace_with_name"
 let namespace_level_tag = "namespace_level"
 let namespace_library_tag = "namespace_lib"
+
+let namespace_tag_regexp =
+  Str.regexp
+    (sprintf "%s$\\|%s\\((\\([^)]*\\))\\)$"
+      namespace_tag namespace_with_name_tag)
 
 (* Internal use tags. *)
 let alias_file_tag = "namespace_alias_file"
 let ordered_open_tag = "namespace_open"
 let namespace_library_dependency_tag lib =
   sprintf "namespace_library_dependency_%s" lib
+let dummy_tag = "namespaces_dummy"
 
 let namespace_library_title = "_namespaces"
 
 type file =
   {original_name : string;
+   renamed_name  : string;
    prefixed_name : string;
    directory     : string list;
    namespace     : string list}
@@ -49,8 +57,8 @@ let original_path {original_name; directory; _} =
 let final_path {prefixed_name; directory; _} =
   directory @ [prefixed_name] |> path_to_string
 
-let module_path {original_name; namespace; _} =
-  namespace @ [module_name_of_pathname original_name]
+let module_path {renamed_name; namespace; _} =
+  namespace @ [module_name_of_pathname renamed_name]
 
 let member_module_files {modules; namespaces; _} =
   (List.map fst namespaces) @ modules
@@ -70,17 +78,37 @@ let member_module_files {modules; namespaces; _} =
    in the source tree. These are discovered through the rules passed in the
    [generators] argument to [scan_tree]. *)
 let scan_tree =
-  (* True iff the given directory is tagged with "namespace". *)
+  (* If the given directory is tagged with "namespace", evaluates to Some None.
+     If it is tagged with "namespace(foo)", evaluates to Some (Some "foo").
+     Otherwise, evaluates to None. *)
   let is_namespace directory_path =
-    Tags.does_match
-      (tags_of_pathname directory_path) (Tags.of_list [namespace_tag]) in
+    let rec scan_for_namespace_tag = function
+      | [] -> None
+      | tag::more_tags ->
+        if not @@ Str.string_match namespace_tag_regexp tag 0 then
+          scan_for_namespace_tag more_tags
+        else
+          try Some (Some (Str.matched_group 2 tag))
+          with Not_found -> Some None in
+
+    (directory_path
+    |> tags_of_pathname
+    |> Tags.elements
+    |> scan_for_namespace_tag) in
 
   (* Constructs a [file] record when given the current filesystem and module
      paths, and the basename of a file or directory. *)
-  let make_file_record directory namespace name =
-    let prefixed_name = String.concat "__" (namespace @ [name]) in
-    {original_name = name; prefixed_name; directory = directory;
-     namespace = namespace} in
+  let make_file_record directory namespace original_name maybe_renamed_name =
+    let renamed_name =
+      match maybe_renamed_name with
+      | None -> original_name
+      | Some other_name -> other_name in
+    let prefixed_name = String.concat "__" (namespace @ [renamed_name]) in
+    {original_name;
+     renamed_name;
+     prefixed_name;
+     directory;
+     namespace} in
 
   (* Given a [namespace_members], eliminates duplicates in its [modules] and
      [interfaces] fields. *)
@@ -106,21 +134,26 @@ let scan_tree =
                 (Sys.getcwd ()) (String.concat Filename.dir_sep directory) in
             if absolute_path = !Options.build_dir then members_acc
             else
-              if is_namespace entry_path_string then
+              match is_namespace entry_path_string with
+              | None -> traverse entry_path namespace members_acc
+              | Some rename ->
                 let new_namespace =
-                  create_namespace directory namespace entry entry_path in
+                  create_namespace
+                    directory namespace entry entry_path rename in
                 {members_acc
                   with namespaces = new_namespace::members_acc.namespaces}
-              else
-                traverse entry_path namespace members_acc
 
           else
             create_modules directory namespace entry members_acc)
         members_acc
 
-    and create_namespace directory namespace entry entry_path =
-      let file = make_file_record directory namespace entry in
-      let nested_namespace = namespace @ [original_module file] in
+    and create_namespace directory namespace entry entry_path rename =
+      let file = make_file_record directory namespace entry rename in
+      let renamed =
+        match rename with
+        | None -> entry
+        | Some other_name -> other_name in
+      let nested_namespace = namespace @ [module_name_of_pathname renamed] in
       let members = traverse entry_path nested_namespace empty_members in
       (file, unique members)
 
@@ -134,7 +167,7 @@ let scan_tree =
         []
       |> List.fold_left
         (fun members_acc generated_file ->
-          let file = make_file_record directory namespace generated_file in
+          let file = make_file_record directory namespace generated_file None in
           if Filename.check_suffix generated_file ".ml" then
             {members_acc with modules = file::members_acc.modules}
           else if Filename.check_suffix generated_file ".mli" then
@@ -175,7 +208,8 @@ let namespace_libraries : (string, string list) Hashtbl.t =
 (* For each [.ml] or [.mli] file found during the source tree scan, if its
    namespaced name differs from its original name, adds it to [renamed_files].
    The condition holds for files inside namespaces, and doesn't hold for files
-   representing top-level modules. *)
+   representing top-level modules that have not been renamed with
+   [namespace_with_name]. *)
 let index_renamed_files () =
   iter
     (function
@@ -198,6 +232,8 @@ let index_namespaces () =
         traverse members') in
   traverse !tree;
 
+  (* Silence warnings about unused tags. *)
+  pflag [dummy_tag] namespace_with_name_tag (fun _ -> N);
   mark_tag_used namespace_tag;
   mark_tag_used namespace_level_tag
 
@@ -272,12 +308,12 @@ let alias_file_contents (namespace_file, members) =
   member_modules |> List.iter
     (fun member ->
       bprintf buffer "module %s =\nstruct\n"
-        (alias_group_module namespace_file.prefixed_name member.original_name);
+        (alias_group_module namespace_file.prefixed_name member.renamed_name);
       member_modules |> List.iter
         (fun member' ->
           if member' <> member then
             bprintf buffer "  module %s = %s\n"
-              (module_name_of_pathname member'.original_name)
+              (module_name_of_pathname member'.renamed_name)
               (module_name_of_pathname member'.prefixed_name));
       bprintf buffer "end\n\n");
 
@@ -286,7 +322,7 @@ let alias_file_contents (namespace_file, members) =
   member_modules |> List.iter
     (fun member ->
       bprintf buffer "  module %s = %s\n"
-        (module_name_of_pathname member.original_name)
+        (module_name_of_pathname member.renamed_name)
         (module_name_of_pathname member.prefixed_name));
   bprintf buffer "end\n";
 
@@ -330,8 +366,8 @@ let resolve (referrer : file) (referent : string) : string =
       try
         let matching_module =
           member_modules |> List.find
-            (fun {original_name; _} ->
-              referent = (module_name_of_pathname original_name))
+            (fun {renamed_name; _} ->
+              referent = (module_name_of_pathname renamed_name))
           |> fun {prefixed_name; _} -> module_name_of_pathname prefixed_name in
         if matching_module = self then raise_notrace Not_found
         else matching_module
@@ -446,16 +482,16 @@ let assemble_libraries () =
 let hide_original_nested_modules () =
   let top_level_names =
     member_module_files !tree
-    |> List.map (fun {original_name; _} ->
-      module_name_of_pathname original_name) in
+    |> List.map (fun {renamed_name; _} ->
+      module_name_of_pathname renamed_name) in
 
   let hide_if_nested file =
     match file.namespace with
     | [] -> ()
     | _  ->
-      let original_module_name = module_name_of_pathname file.original_name in
-      if not (List.mem original_module_name top_level_names) then
-        Options.ignore_list := original_module_name::!Options.ignore_list in
+      let renamed_module_name = module_name_of_pathname file.renamed_name in
+      if not (List.mem renamed_module_name top_level_names) then
+        Options.ignore_list := renamed_module_name::!Options.ignore_list in
 
   Hashtbl.iter (fun _ file      -> hide_if_nested file) renamed_files;
   Hashtbl.iter (fun _ (file, _) -> hide_if_nested file) namespace_directory_map

@@ -13,6 +13,7 @@ let identity_filter = fun s -> Some s
 
 type file = Modules.file =
   {original_name : string;
+   renamed_name  : string;
    prefixed_name : string;
    directory     : string list;
    namespace     : string list}

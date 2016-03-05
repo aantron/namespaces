@@ -7,6 +7,9 @@ type file =
   {original_name : string;
    (** The original basename of the file or directory, including extension, if
        any. For example, [server/foo.ml] has this set to ["foo.ml"]. *)
+   renamed_name  : string;
+   (** For namespaces tagged with [namespace_with_name(n)], this is [n].
+       Otherwise, the same as [original_name]. *)
    prefixed_name : string;
    (** The prefixed name of the file or directory. For example, [server/foo.ml]
        has this field set to [server__foo.ml]. *)

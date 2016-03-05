@@ -87,6 +87,9 @@ val delete_mllib_files : unit -> unit
 type file =
   {original_name : string;
    (** File or directory name as it appears in the source tree. *)
+   renamed_name  : string;
+   (** If the file is a namespace tagged with [namespace_with_name(n)], this is
+       [n]. Otherwise, it is equal to [original_name]. *)
    prefixed_name : string;
    (** File or directory name after prefixing with its namespace path. *)
    directory     : string list;
