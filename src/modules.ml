@@ -77,24 +77,25 @@ let member_module_files {modules; namespaces; _} =
    Generated [.ml] and [.mli] files are part of the project, but cannot be found
    in the source tree. These are discovered through the rules passed in the
    [generators] argument to [scan_tree]. *)
-let scan_tree =
+let scan_tree
+    : Generators.parsed -> (string -> string option) -> namespace_members =
   (* If the given directory is tagged with "namespace", evaluates to Some None.
      If it is tagged with "namespace(foo)", evaluates to Some (Some "foo").
      Otherwise, evaluates to None. *)
   let is_namespace directory_path =
-    let rec scan_for_namespace_tag = function
-      | [] -> None
+    let rec scan_for_namespace_tag namespace_tag_found = function
+      | [] -> if namespace_tag_found then Some None else None
       | tag::more_tags ->
         if not @@ Str.string_match namespace_tag_regexp tag 0 then
-          scan_for_namespace_tag more_tags
+          scan_for_namespace_tag namespace_tag_found more_tags
         else
           try Some (Some (Str.matched_group 2 tag))
-          with Not_found -> Some None in
+          with Not_found -> scan_for_namespace_tag true more_tags in
 
-    (directory_path
+    directory_path
     |> tags_of_pathname
     |> Tags.elements
-    |> scan_for_namespace_tag) in
+    |> scan_for_namespace_tag false in
 
   (* Constructs a [file] record when given the current filesystem and module
      paths, and the basename of a file or directory. *)
@@ -433,6 +434,15 @@ let add_open_tags () =
   pflag ["ocaml"; "compile"] ordered_open_tag open_tag_to_flags;
   pflag ["ocamldep"]         ordered_open_tag open_tag_to_flags
 
+(* Recursively traverses the source tree. For each namespace that is tagged with
+   "namespace_lib", lists its modules that are not included in another such
+   namespace. The list is stored in the hash table namespace_libraries, keyed by
+   the final path of each such namespace library. If any modules remain at the
+   top level, not included in any "namespace_lib" namespace, they are listed
+   under a separate key "_namespaces".
+
+   After that, each target that is an executable is made to depend on all
+   libraries thus listed. *)
 let assemble_libraries () =
   let rec at_namespace_list accumulator namespaces =
     namespaces |> List.fold_left
