@@ -1,0 +1,8 @@
+archive(byte) = "base.cma"
+archive(native) = "base.cmxa"
+
+package "unix" (
+  archive(byte) = "unix.cma"
+  archive(native) = "unix.cmxa"
+  requires = "namespaces-nested-lib-test"
+)

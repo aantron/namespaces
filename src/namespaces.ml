@@ -9,7 +9,10 @@ let ocamllex = Generators.ocamllex
 let ocamlyacc = Generators.ocamlyacc
 let builtin_generators = Generators.builtin
 
-let identity_filter = fun s -> Some s
+let plugin_filter = function
+  | "myocamlbuild.ml" -> None
+  | "setup.ml" -> None
+  | s -> Some s
 
 type file = Modules.file =
   {original_name : string;
@@ -35,7 +38,7 @@ let include_files_sharing_namespace_title () =
         | _ -> ())
     | _ -> ())
 
-let handler ?(generators = Generators.builtin) ?(filter = identity_filter) =
+let handler ?(generators = Generators.builtin) ?(filter = plugin_filter) =
   function
   | After_rules ->
     Modules.scan (Generators.parse generators) filter;

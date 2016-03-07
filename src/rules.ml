@@ -93,6 +93,8 @@ let long_name_rules () =
   for_extension "ml";
   for_extension "mli"
 
+let topological_order = ref []
+
 let dependency_filter_rules () =
   let whitespace = Str.regexp "[ \n\t\r]+" in
   let for_extension extension =
@@ -102,6 +104,8 @@ let dependency_filter_rules () =
     rule name ~prod ~dep ~insert:`top
       begin
         fun env build ->
+          topological_order := (env dep)::!topological_order;
+
           let file =
             match Modules.file_by_renamed_path (env dep) with
             | Some f -> f
@@ -145,10 +149,42 @@ let library_rule () =
   rule name ~prod
     begin
       fun env build ->
-        let text =
-          match Modules.library_file_contents_by_final_base_path (env "%") with
+        let module_files =
+          match Modules.library_contents_by_final_base_path (env "%") with
           | Some s -> s
           | None   -> fail (env prod) "not a namespace library" build in
+
+        (* Build the library contents to get a topological sort according to the
+           internal dependency relation. *)
+        module_files
+        |> List.map (fun file ->
+          let file =
+            if Filename.check_suffix file ".ml" then file
+            else file ^ ".ml" in
+          [file ^ ".depends"])
+        |> build
+        |> List.map Outcome.ignore_good
+        |> ignore;
+
+        let order_snapshot =
+          !topological_order |> List.map module_name_of_pathname in
+
+        let order_index module_name =
+          let rec scan n = function
+            | [] -> -1
+            | name::rest ->
+              if module_name = name then n else scan (n + 1) rest in
+          scan 0 order_snapshot in
+
+        let text =
+          module_files
+          |> List.map (fun file ->
+            let name = module_name_of_pathname file in
+            (name, order_index name))
+          |> List.sort (fun (_, index) (_, index') -> compare index' index)
+          |> List.map fst
+          |> String.concat "\n" in
+
         make_directory (env prod);
         Echo ([text], env prod)
     end

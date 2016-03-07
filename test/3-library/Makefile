@@ -13,12 +13,12 @@ clean :
 
 PACKAGE := namespaces-lib-test
 INSTALL := \
-	_build/src/lib_1.cma \
-	_build/src/lib_1.cmxa \
-	_build/src/lib_1.a \
-	_build/src/lib_2.cma \
-	_build/src/lib_2.cmxa \
-	_build/src/lib_2.a \
+	_build/lib_1.cma \
+	_build/lib_1.cmxa \
+	_build/lib_1.a \
+	_build/lib_2.cma \
+	_build/lib_2.cmxa \
+	_build/lib_2.a \
 	$(shell find _build/src -name *.cmi) \
 	$(shell find _build/src -name *.cmt) \
 	$(shell find _build/src -name *.cmti)

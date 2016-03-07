@@ -17,6 +17,9 @@ let namespace_tag_regexp =
     (sprintf "%s$\\|%s\\((\\([^)]*\\))\\)$"
       namespace_tag namespace_with_name_tag)
 
+let library_tag_regexp =
+  Str.regexp (sprintf "%s\\((\\([^)]*\\))\\)?$" namespace_library_tag)
+
 (* Internal use tags. *)
 let alias_file_tag = "namespace_alias_file"
 let ordered_open_tag = "namespace_open"
@@ -63,6 +66,28 @@ let module_path {renamed_name; namespace; _} =
 let member_module_files {modules; namespaces; _} =
   (List.map fst namespaces) @ modules
 
+let digest_file base_name =
+  sprintf "%s.digest" base_name
+
+let alias_container_module base_name =
+  sprintf "%s__aliases_" (module_name_of_pathname base_name)
+
+let alias_group_module base_name for_module =
+  sprintf "%s__aliases__for_%s_"
+    (module_name_of_pathname base_name) (module_name_of_pathname for_module)
+
+let alias_export_module base_name =
+  sprintf "%s__aliases__export_" (module_name_of_pathname base_name)
+
+let alias_container_file base_name =
+  sprintf "%s__aliases_.ml" base_name
+
+let namespace_file base_name =
+  sprintf "%s.ml" base_name
+
+let library_list_file base_name =
+  sprintf "%s.mllib" base_name
+
 (* Recursively traverses the source tree. Keeps track of the current filesystem
    path as a list of strings. Keeps track of the current namespace path in the
    same way. The namespace path is extended when a directory is encountered that
@@ -77,8 +102,10 @@ let member_module_files {modules; namespaces; _} =
    Generated [.ml] and [.mli] files are part of the project, but cannot be found
    in the source tree. These are discovered through the rules passed in the
    [generators] argument to [scan_tree]. *)
-let scan_tree
-    : Generators.parsed -> (string -> string option) -> namespace_members =
+let scan_tree :
+    Generators.parsed -> (string -> string option) ->
+      namespace_members * (string, string list) Hashtbl.t =
+
   (* If the given directory is tagged with "namespace", evaluates to Some None.
      If it is tagged with "namespace(foo)", evaluates to Some (Some "foo").
      Otherwise, evaluates to None. *)
@@ -96,6 +123,27 @@ let scan_tree
     |> tags_of_pathname
     |> Tags.elements
     |> scan_for_namespace_tag false in
+
+  (* If the given path is tagged with "namespace_lib(foo)", evaluates to
+     Some "foo". Otherwise, evaluates to None. *)
+  let is_for_library path =
+    let rec scan_for_library_tag = function
+      | [] -> None
+      | tag::more_tags ->
+        if not @@ Str.string_match library_tag_regexp tag 0 then
+          scan_for_library_tag more_tags
+        else
+          try Some (Str.matched_group 2 tag)
+          with Not_found ->
+            sprintf
+              "The %s tag requires an argument (library name)"
+              namespace_library_tag
+            |> failwith in
+
+    path
+    |> tags_of_pathname
+    |> Tags.elements
+    |> scan_for_library_tag in
 
   (* Constructs a [file] record when given the current filesystem and module
      paths, and the basename of a file or directory. *)
@@ -121,7 +169,14 @@ let scan_tree
      namespaces} in
 
   fun generators filter ->
-    let rec traverse directory namespace members_acc =
+    let libraries = Hashtbl.create 32 in
+    let add_to_library library_name module_file =
+      let modules =
+        try Hashtbl.find libraries library_name
+        with Not_found -> [] in
+      Hashtbl.replace libraries library_name (module_file::modules) in
+
+    let rec traverse library directory namespace members_acc =
       path_to_string directory
       |> Sys.readdir
       |> Array.fold_left
@@ -129,6 +184,12 @@ let scan_tree
           let entry_path = directory @ [entry] in
           let entry_path_string = path_to_string entry_path in
 
+          let library =
+            match is_for_library entry_path_string with
+            | None -> library
+            | Some library_name -> Some library_name in
+
+          (* Directories. *)
           if Sys.is_directory entry_path_string then
             let absolute_path =
               Filename.concat
@@ -136,29 +197,38 @@ let scan_tree
             if absolute_path = !Options.build_dir then members_acc
             else
               match is_namespace entry_path_string with
-              | None -> traverse entry_path namespace members_acc
+              | None -> traverse library entry_path namespace members_acc
               | Some rename ->
                 let new_namespace =
                   create_namespace
-                    directory namespace entry entry_path rename in
+                    library directory namespace entry entry_path rename in
                 {members_acc
                   with namespaces = new_namespace::members_acc.namespaces}
 
+          (* Files. *)
           else
-            create_modules directory namespace entry members_acc)
+            create_modules library directory namespace entry members_acc)
         members_acc
 
-    and create_namespace directory namespace entry entry_path rename =
+    and create_namespace library directory namespace entry entry_path rename =
       let file = make_file_record directory namespace entry rename in
-      let renamed =
-        match rename with
-        | None -> entry
-        | Some other_name -> other_name in
-      let nested_namespace = namespace @ [module_name_of_pathname renamed] in
-      let members = traverse entry_path nested_namespace empty_members in
+
+      let library_name =
+        match library with
+        | None -> namespace_library_title
+        | Some name -> name in
+
+      add_to_library library_name (final_path file);
+      add_to_library library_name (alias_container_file (final_path file));
+
+      let nested_namespace =
+        namespace @ [module_name_of_pathname file.renamed_name] in
+      let members =
+        traverse
+          (Some library_name) entry_path nested_namespace empty_members in
       (file, unique members)
 
-    and create_modules directory namespace entry members_acc =
+    and create_modules library directory namespace entry members_acc =
       generators entry
       |> List.map filter
       |> List.fold_left
@@ -170,14 +240,19 @@ let scan_tree
         (fun members_acc generated_file ->
           let file = make_file_record directory namespace generated_file None in
           if Filename.check_suffix generated_file ".ml" then
-            {members_acc with modules = file::members_acc.modules}
+            ((match library with
+            | None -> ()
+            | Some library_name ->
+              add_to_library library_name (final_path file));
+            {members_acc with modules = file::members_acc.modules})
           else if Filename.check_suffix generated_file ".mli" then
             {members_acc with interfaces = file::members_acc.interfaces}
           else members_acc)
         members_acc in
 
-    let top_level_members = traverse [] [] empty_members in
-    unique top_level_members
+    let top_level_members = traverse None [] [] empty_members in
+
+    unique top_level_members, libraries
 
 let iter f =
   let rec traverse members =
@@ -203,8 +278,8 @@ let namespace_directory_map : (string, namespace) Hashtbl.t =
 let namespace_module_map : (string list, namespace) Hashtbl.t =
   Hashtbl.create 32
 
-let namespace_libraries : (string, string list) Hashtbl.t =
-  Hashtbl.create 32
+let namespace_libraries : (string, string list) Hashtbl.t ref =
+  ref (Hashtbl.create 1)
 
 (* For each [.ml] or [.mli] file found during the source tree scan, if its
    namespaced name differs from its original name, adds it to [renamed_files].
@@ -235,34 +310,13 @@ let index_namespaces () =
 
   (* Silence warnings about unused tags. *)
   pflag [dummy_tag] namespace_with_name_tag (fun _ -> N);
+  pflag [dummy_tag] namespace_library_tag (fun _ -> N);
   mark_tag_used namespace_tag;
   mark_tag_used namespace_level_tag
 
 let namespace_by_final_directory s =
   try Some (Hashtbl.find namespace_directory_map s)
   with Not_found -> None
-
-let digest_file base_name =
-  sprintf "%s.digest" base_name
-
-let alias_container_module base_name =
-  sprintf "%s__aliases_" (module_name_of_pathname base_name)
-
-let alias_group_module base_name for_module =
-  sprintf "%s__aliases__for_%s_"
-    (module_name_of_pathname base_name) (module_name_of_pathname for_module)
-
-let alias_export_module base_name =
-  sprintf "%s__aliases__export_" (module_name_of_pathname base_name)
-
-let alias_container_file base_name =
-  sprintf "%s__aliases_.ml" base_name
-
-let namespace_file base_name =
-  sprintf "%s.ml" base_name
-
-let library_list_file base_name =
-  sprintf "%s.mllib" base_name
 
 let extension s =
   try
@@ -350,11 +404,8 @@ let namespace_file_contents (namespace_file, members) digest =
 
   Buffer.contents buffer
 
-let library_file_contents_by_final_base_path path =
-  try
-    Hashtbl.find namespace_libraries path
-    |> String.concat "\n"
-    |> fun s -> Some (s ^ "\n")
+let library_contents_by_final_base_path path =
+  try Some (Hashtbl.find !namespace_libraries path)
   with Not_found -> None
 
 let resolve (referrer : file) (referent : string) : string =
@@ -434,45 +485,9 @@ let add_open_tags () =
   pflag ["ocaml"; "compile"] ordered_open_tag open_tag_to_flags;
   pflag ["ocamldep"]         ordered_open_tag open_tag_to_flags
 
-(* Recursively traverses the source tree. For each namespace that is tagged with
-   "namespace_lib", lists its modules that are not included in another such
-   namespace. The list is stored in the hash table namespace_libraries, keyed by
-   the final path of each such namespace library. If any modules remain at the
-   top level, not included in any "namespace_lib" namespace, they are listed
-   under a separate key "_namespaces".
-
-   After that, each target that is an executable is made to depend on all
-   libraries thus listed. *)
-let assemble_libraries () =
-  let rec at_namespace_list accumulator namespaces =
-    namespaces |> List.fold_left
-      (fun accumulator ((file, _) as namespace) ->
-        let tags = original_path file |> tags_of_pathname in
-        if Tags.mem namespace_library_tag tags then
-          let nested_library_modules = at_namespace [] namespace in
-          Hashtbl.add namespace_libraries
-            (final_path file) nested_library_modules;
-          accumulator
-        else at_namespace accumulator namespace)
-      accumulator
-
-  and at_namespace accumulator (file, members) =
-    let alias_module = alias_container_module file.prefixed_name in
-    let namespace_module = module_name_of_pathname file.prefixed_name in
-    let accumulator =
-      (List.map
-        (fun {prefixed_name; _} -> module_name_of_pathname prefixed_name)
-        members.modules)
-      @ accumulator in
-    at_namespace_list
-      (alias_module::namespace_module::accumulator) members.namespaces in
-
-  let top_level_modules = at_namespace_list [] !tree.namespaces in
-  if top_level_modules <> [] then
-    Hashtbl.add namespace_libraries namespace_library_title top_level_modules;
-
-  mark_tag_used namespace_library_tag;
-
+(* Makes each executable target depend on all the libraries in the current
+   project. *)
+let add_library_dependencies () =
   let is_binary target =
     match extension target with
     | "byte" | "native" -> true
@@ -485,7 +500,7 @@ let assemble_libraries () =
       let tag_name = namespace_library_dependency_tag base_path in
       ocaml_lib ~tag_name base_path;
       List.iter (fun target -> tag_file target [tag_name]) binary_targets)
-    namespace_libraries
+    !namespace_libraries
 
 (* For each module [Foo] that is not a top-level module, hides the module from
    Ocamlbuild by extending [Options.ignore_list]. *)
@@ -507,10 +522,13 @@ let hide_original_nested_modules () =
   Hashtbl.iter (fun _ (file, _) -> hide_if_nested file) namespace_directory_map
 
 let scan generators filter =
-  tree := scan_tree generators filter;
+  let namespace_trees, libraries = scan_tree generators filter in
+  tree := namespace_trees;
+  namespace_libraries := libraries;
+
   index_renamed_files ();
   index_namespaces ();
   tag_namespace_files ();
   add_open_tags ();
-  assemble_libraries ();
-  hide_original_nested_modules ()
+  hide_original_nested_modules ();
+  add_library_dependencies ()

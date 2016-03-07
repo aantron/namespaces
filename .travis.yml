@@ -12,8 +12,8 @@ before_script:
 script:
   - opam install -y ocamlfind oasis
   - make build test
-  - opam remove -y ocamlfind
   - make clean
+  - opam remove -y ocamlfind
   - ln -s src/opam
   - opam pin add -y .
   - opam install oasis -y
