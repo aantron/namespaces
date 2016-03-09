@@ -487,19 +487,18 @@ let add_open_tags () =
 
 (* Makes each executable target depend on all the libraries in the current
    project. *)
-let add_library_dependencies () =
-  let is_binary target =
-    match extension target with
-    | "byte" | "native" -> true
-    | _ -> false in
-
-  let binary_targets = List.filter is_binary !Options.targets in
-
+let create_library_tags () =
   Hashtbl.iter
     (fun base_path _ ->
       let tag_name = namespace_library_dependency_tag base_path in
-      ocaml_lib ~tag_name base_path;
-      List.iter (fun target -> tag_file target [tag_name]) binary_targets)
+      ocaml_lib ~tag_name base_path)
+    !namespace_libraries
+
+let tag_executable_with_libraries filename =
+  Hashtbl.iter
+    (fun base_path _ ->
+      let tag_name = namespace_library_dependency_tag base_path in
+      tag_file filename [tag_name])
     !namespace_libraries
 
 (* For each module [Foo] that is not a top-level module, hides the module from
@@ -531,4 +530,4 @@ let scan generators filter =
   tag_namespace_files ();
   add_open_tags ();
   hide_original_nested_modules ();
-  add_library_dependencies ()
+  create_library_tags ()

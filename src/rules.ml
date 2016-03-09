@@ -189,6 +189,27 @@ let library_rule () =
         Echo ([text], env prod)
     end
 
+(* A side-effecting rule for each executable, that makes each executable depend
+   on all the libraries in the same project. It is not possible to use
+   [Options.targets] for this purpose, because that contains the literal names
+   of each target, as given on the command line. If the user gives a target such
+   as [main.byte], when the "real" target is [src/main.byte], Ocamlbuild will
+   build [src/main.byte], [Options.targets] will contain [main.byte], and
+   Ocamlbuild will ignore tags of [main.byte]. *)
+let executable_rules () =
+  let for_extension extension =
+    let name = sprintf "executable dependencies %s" extension in
+    let prod = sprintf "%%.%s" extension in
+    rule name ~prod ~insert:`top
+      begin
+        fun env build ->
+          Modules.tag_executable_with_libraries (env prod);
+          fail (env prod) "__dummy_target__" build
+      end in
+
+  for_extension "byte";
+  for_extension "native"
+
 
 
 let add_all () =
@@ -197,4 +218,5 @@ let add_all () =
   namespace_file_generation_rule ();
   long_name_rules ();
   dependency_filter_rules ();
-  library_rule ()
+  library_rule ();
+  executable_rules ()

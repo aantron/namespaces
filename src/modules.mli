@@ -74,6 +74,9 @@ val library_list_file : string -> string
 (** Lists the module file names in the given namespace library. *)
 val library_contents_by_final_base_path : string -> string list option
 
+(** Makes the given executable depend on all namespace libraries. *)
+val tag_executable_with_libraries : string -> unit
+
 (** Given a file (the referrer) and the short name of a module it refers to,
     tries to resolve the module name to a namespaced module. *)
 val resolve : file -> string -> string
