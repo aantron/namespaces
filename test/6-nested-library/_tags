@@ -1,5 +1,0 @@
-<**/*>: include
-"src": namespace_lib(base), namespace_with_name(Nested_lib)
-"src/unix" or "src/core": namespace
-"src/unix": namespace_lib(unix)
-"nested_lib_unix.ml": namespace_lib(unix)

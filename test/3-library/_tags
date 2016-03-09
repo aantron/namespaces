@@ -1,4 +1,0 @@
-<**/*>: include
-<src/*/**> or <src/namespace_2/**>: namespace
-<src/lib_1>: namespace_lib(lib_1)
-<src/lib_2>: namespace_lib(lib_2)

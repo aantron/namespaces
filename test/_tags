@@ -1,0 +1,3 @@
+<**/*>: package(oUnit)
+"test_helpers.ml": package(process), package(str)
+<*.native> or <*.byte>: package(process), package(str)

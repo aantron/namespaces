@@ -1,3 +1,0 @@
-<**/*>: include
-"src": namespace_with_name(library), namespace_lib(library)
-"src/namespace": namespace

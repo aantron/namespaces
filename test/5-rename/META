@@ -1,2 +1,0 @@
-archive(byte) = "library.cma"
-archive(native) = "library.cmxa"

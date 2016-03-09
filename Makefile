@@ -5,17 +5,8 @@ INSTALL := \
 	$(foreach target,$(TARGETS),_build/$(target)) src/namespaces.mli \
 	_build/src/namespaces.cmt _build/src/namespaces.cmti
 
-DEV_INSTALL_DIR := _findlib
-
 CFLAGS := -bin-annot
 OCAMLBUILD := ocamlbuild -use-ocamlfind -cflags $(CFLAGS)
-
-for_tests = \
-	for TEST in `ls test | grep -` ; \
-	do \
-		$1 ; \
-		if [ $$? -ne 0 ] ; then exit 1 ; fi ; \
-	done
 
 .PHONY : build
 build :
@@ -30,25 +21,10 @@ uninstall :
 	ocamlfind remove $(PACKAGE)
 
 .PHONY : test
-test : build
-	$(call for_tests,make one NAME=$$TEST)
-
-.PHONY : one
-one : build
-	@echo
-	@echo Running test $(NAME)
-	@echo
-	@mkdir -p $(DEV_INSTALL_DIR)
-	@if [ -z $(OPAM_INSTALLATION) ] ; \
-	then \
-		export OCAMLPATH=`pwd`/$(DEV_INSTALL_DIR):$(OCAMLPATH) ; \
-		export OCAMLFIND_DESTDIR=`pwd`/$(DEV_INSTALL_DIR) ; \
-		make install || exit 1 ; \
-	fi ; \
-	make -C test/$(NAME)
+test :
+	make -C test
 
 .PHONY : clean
 clean :
 	ocamlbuild -clean
-	$(call for_tests,make -C test/$$TEST clean)
-	rm -rf $(DEV_INSTALL_DIR)
+	make -C test clean
