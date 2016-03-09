@@ -12,7 +12,7 @@ all :
 #   recompilation.
 .PHONY : not_linked
 not_linked : clean prepare
-	$(OCAMLBUILD) -quiet not_linked.native --
+	$(OCAMLBUILD) not_linked.native --
 	make twiddle
 	$(OCAMLBUILD) not_linked.native --
 	$(OCAMLBUILD) not_linked.native --
@@ -22,7 +22,7 @@ not_linked : clean prepare
 #   reference it.
 .PHONY : linked
 linked : clean prepare
-	! $(OCAMLBUILD) -quiet linked.native --
+	! $(OCAMLBUILD) linked.native --
 	make twiddle
 	! $(OCAMLBUILD) linked.native --
 	! $(OCAMLBUILD) linked.native --

@@ -93,8 +93,6 @@ let long_name_rules () =
   for_extension "ml";
   for_extension "mli"
 
-let topological_order = ref []
-
 let dependency_filter_rules () =
   let whitespace = Str.regexp "[ \n\t\r]+" in
   let for_extension extension =
@@ -104,8 +102,6 @@ let dependency_filter_rules () =
     rule name ~prod ~dep ~insert:`top
       begin
         fun env build ->
-          topological_order := (env dep)::!topological_order;
-
           let file =
             match Modules.file_by_renamed_path (env dep) with
             | Some f -> f
@@ -143,6 +139,23 @@ let dependency_filter_rules () =
   for_extension "ml";
   for_extension "mli"
 
+let dependencies_from_log =
+  let newline = Str.regexp_string "\n" in
+  let compiled =
+    Str.regexp "ocamlfind ocaml\\(c\\|opt\\).* \\([^ ]+\\.ml\\)$" in
+
+  fun () ->
+    if not @@ Sys.file_exists "_log" then
+      failwith "_log not present; are you running with -quiet?";
+
+    "cat _log"
+    |> run_and_read
+    |> Str.split newline
+    |> List.fold_left (fun acc line ->
+      if not @@ Str.string_match compiled line 0 then acc
+      else (Str.matched_group 2 line)::acc) []
+    |> List.rev_map module_name_of_pathname
+
 let library_rule () =
   let name = "namespace: * -> mllib" in
   let prod = Modules.library_list_file "%" in
@@ -166,8 +179,7 @@ let library_rule () =
         |> List.map Outcome.ignore_good
         |> ignore;
 
-        let order_snapshot =
-          !topological_order |> List.map module_name_of_pathname in
+        let order_snapshot = dependencies_from_log () in
 
         let order_index module_name =
           let rec scan n = function
@@ -181,7 +193,7 @@ let library_rule () =
           |> List.map (fun file ->
             let name = module_name_of_pathname file in
             (name, order_index name))
-          |> List.sort (fun (_, index) (_, index') -> compare index' index)
+          |> List.sort (fun (_, index) (_, index') -> compare index index')
           |> List.map fst
           |> String.concat "\n" in
 

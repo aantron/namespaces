@@ -1,6 +1,5 @@
 OCAMLBUILD := \
-	ocamlbuild -use-ocamlfind -plugin-tag "package(namespaces)" -no-links \
-		-quiet
+	ocamlbuild -use-ocamlfind -plugin-tag "package(namespaces)" -no-links
 
 .PHONY : all
 all : success original_name_hidden
