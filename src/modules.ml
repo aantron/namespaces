@@ -223,8 +223,8 @@ let scan_tree :
         | None -> namespace_library_title
         | Some name -> name in
 
-      add_to_library library_name (final_path file);
-      add_to_library library_name (alias_container_file (final_path file));
+      (* add_to_library library_name (final_path file); *)
+      (* add_to_library library_name (alias_container_file (final_path file)); *)
 
       let nested_namespace =
         namespace @ [module_name_of_pathname file.renamed_name] in
@@ -493,7 +493,7 @@ let tag_namespace_files () =
 (* TODO Must make sure that the namespace map file is always opened first, so
    perhaps that is best taken care of in this function. *)
 let add_open_tags () =
-  let tag_file final_path file =
+  let tag_file file =
     let rec list_modules_to_open accumulator enclosing_namespace_path = function
       | []          -> failwith "impossible"
       | [_]         -> List.rev accumulator
@@ -510,17 +510,28 @@ let add_open_tags () =
         list_modules_to_open
           (c::accumulator)
           enclosing_namespace_path
-          (c'::rest) in
+          (c'::rest)
+    in
 
     let tag =
-      list_modules_to_open [] [] (module_path file)
+      list_modules_to_open
+        [module_name_of_pathname map_file_name] [] (module_path file)
       |> String.concat ","
-      |> sprintf "%s(%s)" ordered_open_tag in
+      |> sprintf "%s(%s)" ordered_open_tag
+    in
+
+    let final_path = final_path file in
 
     tag_file final_path [tag];
-    tag_file (final_path ^ ".depends") [tag] in
+    tag_file (final_path ^ ".depends") [tag]
+  in
 
-  Hashtbl.iter tag_file renamed_files;
+  (* Hashtbl.iter tag_file renamed_files; *)
+
+  let rec traverse members =
+    members.modules |> List.iter tag_file;
+    members.namespaces |> List.iter (fun (_, members) -> traverse members) in
+  traverse !tree;
 
   (* The reverse argument is a workaround for
      http://caml.inria.fr/mantis/view.php?id=7248. *)
@@ -532,7 +543,7 @@ let add_open_tags () =
     |> fun options -> S options in
 
   pflag ["ocaml"; "compile"] ordered_open_tag (open_tag_to_flags false);
-  pflag ["ocamldep"]         ordered_open_tag (open_tag_to_flags false)
+  pflag ["ocamldep"]         ordered_open_tag (open_tag_to_flags true)
 
 (* TODO Remove. *)
 (* let add_map_tags () =
@@ -553,9 +564,7 @@ let add_map_tags () =
 
   let tag = sprintf "%s(%s)" use_map_file_tag map_file_name in
   pflag ["ocamldep"] use_map_file_tag (fun map_file ->
-    S [A "-map"; A map_file; A "-open"; A (module_name_of_pathname map_file)]);
-  pflag ["ocaml"; "compile"] use_map_file_tag (fun map_file ->
-    S [A "-open"; A (module_name_of_pathname map_file)]);
+    S [A "-map"; A map_file]);
 
   let rec tag_all members =
     members.modules @ members.interfaces
