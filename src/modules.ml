@@ -522,14 +522,17 @@ let add_open_tags () =
 
   Hashtbl.iter tag_file renamed_files;
 
-  let open_tag_to_flags modules_string =
+  (* The reverse argument is a workaround for
+     http://caml.inria.fr/mantis/view.php?id=7248. *)
+  let open_tag_to_flags reverse modules_string =
     modules_string
     |> Str.split (Str.regexp ",")
+    |> (fun l -> if reverse then List.rev l else l)
     |> List.map (fun m -> S [A "-open"; A m])
     |> fun options -> S options in
 
-  pflag ["ocaml"; "compile"] ordered_open_tag open_tag_to_flags;
-  pflag ["ocamldep"]         ordered_open_tag open_tag_to_flags
+  pflag ["ocaml"; "compile"] ordered_open_tag (open_tag_to_flags false);
+  pflag ["ocamldep"]         ordered_open_tag (open_tag_to_flags false)
 
 (* TODO Remove. *)
 (* let add_map_tags () =
