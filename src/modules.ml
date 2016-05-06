@@ -21,13 +21,18 @@ let library_tag_regexp =
   Str.regexp (sprintf "%s\\((\\([^)]*\\))\\)?$" namespace_library_tag)
 
 (* Internal use tags. *)
+(* TODO Fix the names here. *)
 let alias_file_tag = "namespace_alias_file"
 let ordered_open_tag = "namespace_open"
+let use_map_file_tag = "namespace_use_map_file"
+let map_file_tag = "namespace_map_file"
 let namespace_library_dependency_tag lib =
   sprintf "namespace_library_dependency_%s" lib
 let dummy_tag = "namespaces_dummy"
 
 let namespace_library_title = "_namespaces"
+(* TODO Think about this name more. *)
+let map_file_name = "namespaces_map.ml"
 
 type file =
   {original_name : string;
@@ -383,7 +388,7 @@ let alias_file_contents (namespace_file, members) =
 
   Buffer.contents buffer
 
-let namespace_file_contents (namespace_file, members) digest =
+let namespace_file_contents (namespace_file, members) =
   let buffer = Buffer.create 4096 in
   let alias_module = alias_container_module namespace_file.prefixed_name in
   let export_module = alias_export_module namespace_file.prefixed_name in
@@ -400,14 +405,52 @@ let namespace_file_contents (namespace_file, members) digest =
   bprintf buffer "open %s\n" alias_module;
   bprintf buffer "include %s\n" export_module;
   included_members |> List.iter (bprintf buffer "include %s\n");
-  bprintf buffer "\nlet _digest_%s = ()\n" digest;
 
   Buffer.contents buffer
+
+(* TODO Create alias modules for each inner module. Right now, it should be
+   impossible to shadow List, for example. *)
+let map_file_contents () =
+  let write, finish =
+    let buffer = Buffer.create 4096 in
+
+    begin fun indent s ->
+      for i = 1 to indent do
+        Buffer.add_string buffer "  "
+      done;
+      Buffer.add_string buffer s;
+      Buffer.add_char buffer '\n'
+    end,
+
+    fun () -> Buffer.contents buffer
+  in
+
+  let rec traverse indent members =
+    members.namespaces |> List.iter (fun (namespace_file, members) ->
+      module_name_of_pathname namespace_file.renamed_name
+      |> sprintf "module %s ="
+      |> write indent;
+      write indent "struct";
+
+      traverse (indent + 1) members;
+
+      write indent "end");
+
+    members.modules |> List.iter (fun module_file ->
+      sprintf "module %s = %s"
+        (module_name_of_pathname module_file.original_name)
+        (module_name_of_pathname module_file.prefixed_name)
+      |> write indent)
+  in
+
+  traverse 0 !tree;
+  finish ()
 
 let library_contents_by_final_base_path path =
   try Some (Hashtbl.find !namespace_libraries path)
   with Not_found -> None
 
+(* TODO Should be obsolete. *)
 let resolve (referrer : file) (referent : string) : string =
   let rec loop self = function
     | []                              -> referent
@@ -446,6 +489,9 @@ let tag_namespace_files () =
 
   flag ["ocaml"; "compile"; alias_file_tag] (S [A "-w"; A "-49"])
 
+(* TODO Remove, or replace. *)
+(* TODO Must make sure that the namespace map file is always opened first, so
+   perhaps that is best taken care of in this function. *)
 let add_open_tags () =
   let tag_file final_path file =
     let rec list_modules_to_open accumulator enclosing_namespace_path = function
@@ -456,13 +502,13 @@ let add_open_tags () =
         let namespace_file, _ =
           Hashtbl.find namespace_module_map enclosing_namespace_path in
 
-        let alias_container =
+        (* let alias_container =
           alias_container_module namespace_file.prefixed_name in
         let alias_group =
-          alias_group_module namespace_file.prefixed_name c' in
+          alias_group_module namespace_file.prefixed_name c' in *)
 
         list_modules_to_open
-          (alias_group::alias_container::accumulator)
+          (c::accumulator)
           enclosing_namespace_path
           (c'::rest) in
 
@@ -484,6 +530,42 @@ let add_open_tags () =
 
   pflag ["ocaml"; "compile"] ordered_open_tag open_tag_to_flags;
   pflag ["ocamldep"]         ordered_open_tag open_tag_to_flags
+
+(* TODO Remove. *)
+(* let add_map_tags () =
+  let tag_file final_path file =
+    let namespace_file, _ = Hashtbl.find namespace_module_map file.namespace in
+    let alias_container = alias_container_file namespace_file.prefixed_name in
+    let tag = sprintf "%s(%s)" map_file_tag alias_container in
+    tag_file (final_path ^ ".depends") [tag]
+  in
+
+  Hashtbl.iter tag_file renamed_files;
+
+  pflag ["ocamldep"] map_file_tag (fun map_file -> S [A "-map"; A map_file]) *)
+
+let add_map_tags () =
+  let map_file_path = Filename.concat !Options.build_dir map_file_name in
+  Command.(execute (Echo ([map_file_contents ()], map_file_path)));
+
+  let tag = sprintf "%s(%s)" use_map_file_tag map_file_name in
+  pflag ["ocamldep"] use_map_file_tag (fun map_file ->
+    S [A "-map"; A map_file; A "-open"; A (module_name_of_pathname map_file)]);
+  pflag ["ocaml"; "compile"] use_map_file_tag (fun map_file ->
+    S [A "-open"; A (module_name_of_pathname map_file)]);
+
+  let rec tag_all members =
+    members.modules @ members.interfaces
+    |> List.iter (fun file -> tag_file (final_path file) [tag]);
+    members.namespaces |> List.map snd |> List.iter tag_all
+  in
+
+  tag_all !tree;
+
+  tag_file map_file_name [map_file_tag];
+  flag ["ocamldep"; map_file_tag] (A "-as-map");
+  flag ["ocaml"; "compile"; map_file_tag]
+    (S [A "-no-alias-deps"; A "-w"; A "-49"])
 
 (* Makes each executable target depend on all the libraries in the current
    project. *)
@@ -529,5 +611,7 @@ let scan generators filter =
   index_namespaces ();
   tag_namespace_files ();
   add_open_tags ();
+  (* add_map_tags (); *)
+  add_map_tags ();
   hide_original_nested_modules ();
   create_library_tags ()

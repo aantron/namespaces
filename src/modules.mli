@@ -31,6 +31,8 @@ val iter : ([ `Module | `Interface | `Namespace ] * file -> unit) -> unit
 
 val namespace_level_tag : string
 
+val map_file_name : string
+
 (** File by its final path. Used for symlink rules and [ocamldep] output
     rewriting. *)
 val file_by_renamed_path : string -> file option
@@ -66,7 +68,9 @@ val alias_file_contents : namespace -> string
     [namespace_level]. The string argument gives the digest, which is a dummy
     value used to force recompilation of any file depending on the namespace
     file when the interfaces inside the namespace change. *)
-val namespace_file_contents : namespace -> string -> string
+val namespace_file_contents : namespace -> string
+
+val map_file_contents : unit -> string
 
 (** Library module list file by namespace final directory. Appends [.mllib]. *)
 val library_list_file : string -> string

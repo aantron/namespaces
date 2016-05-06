@@ -27,7 +27,8 @@ let get_namespace env build =
   | Some n -> n
   | None   -> fail (env "%") "not a namespace" build
 
-let digest_file_rule () =
+(* TODO It should be possible to remove this. *)
+(* let digest_file_rule () =
   let name = sprintf "namespace: directory -> %s" (Modules.digest_file "") in
   let prod = Modules.digest_file "%" in
   rule name ~stamp:prod
@@ -39,9 +40,9 @@ let digest_file_rule () =
         |> build
         |> List.map Outcome.ignore_good |> ignore;
         Nop
-    end
+    end *)
 
-let alias_file_generation_rule () =
+(* let alias_file_generation_rule () =
   let name =
     sprintf "namespace: directory -> %s" (Modules.alias_container_file "") in
   let prod = Modules.alias_container_file "%" in
@@ -51,19 +52,25 @@ let alias_file_generation_rule () =
         let namespace = get_namespace env build in
         make_directory (env prod);
         Echo ([Modules.alias_file_contents namespace], env prod)
-    end
+    end *)
 
-let namespace_file_generation_rule () =
+(* TODO It should be possible to remove the dependency on digest files. *)
+(* let namespace_file_generation_rule () =
   let prod = "%.ml" in
-  let dep = "%.digest" in
-  rule "namespace: directory -> ml" ~dep ~prod
+  (* let dep = "%.digest" in *)
+  rule "namespace: directory -> ml" ~prod
     begin
       fun env build ->
         let namespace = get_namespace env build in
-        let digest = Pathname.read (env dep) in
+        (* let digest = Pathname.read (env dep) in *)
         make_directory (env prod);
-        Echo ([Modules.namespace_file_contents namespace digest], env prod)
-    end
+        Echo ([Modules.namespace_file_contents namespace], env prod)
+    end *)
+
+let map_file_generation_rule () =
+  let prod = Modules.map_file_name in
+  rule (sprintf "namespace: %s" prod) ~prod
+    (fun env build -> Echo ([Modules.map_file_contents ()], prod))
 
 let long_name_rules () =
   let for_extension extension =
@@ -93,7 +100,11 @@ let long_name_rules () =
   for_extension "ml";
   for_extension "mli"
 
-let dependency_filter_rules () =
+(* TODO This entire rule class should no longer be necessary. It should be
+   possible to avoid rewriting dependencies with the use of 4.03 ocamldep. *)
+(* TODO Remove all functions from Modules and other modules that are used only
+   here. *)
+(* let dependency_filter_rules () =
   let whitespace = Str.regexp "[ \n\t\r]+" in
   let for_extension extension =
     let name = sprintf "namespace dependencies %s" extension in
@@ -113,6 +124,8 @@ let dependency_filter_rules () =
           let command =
             S [A "ocamlfind"; A "ocamldep"; T tags; A "-modules";
                                             A (env dep)] in
+
+          let () = Command.string_of_command_spec command |> print_endline in
 
           let dependency_string =
             Command.string_of_command_spec command |> run_and_read in
@@ -137,7 +150,7 @@ let dependency_filter_rules () =
       end in
 
   for_extension "ml";
-  for_extension "mli"
+  for_extension "mli" *)
 
 let dependencies_from_log =
   let newline = Str.regexp_string "\n" in
@@ -225,10 +238,11 @@ let executable_rules () =
 
 
 let add_all () =
-  digest_file_rule ();
-  alias_file_generation_rule ();
-  namespace_file_generation_rule ();
+  (* digest_file_rule (); *)
+  (* alias_file_generation_rule (); *)
+  (* namespace_file_generation_rule (); *)
   long_name_rules ();
-  dependency_filter_rules ();
+  (* dependency_filter_rules (); *)
+  map_file_generation_rule ();
   library_rule ();
   executable_rules ()
