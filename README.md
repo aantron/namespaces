@@ -1,3 +1,9 @@
+*This project is **not supported** for the time being. The right thing to do
+with it is to port it to [codept][codept]; however, I don't have the time to do
+this right now. You are welcome to take over and do this.*
+
+[codept]: https://github.com/octachron/codept
+
 # Namespaces &nbsp; [![version 0.5.1][version]][releases] [![BSD license][license-img]][license] [![Travis status][travis-img]][travis]
 
 [version]:     https://img.shields.io/badge/version-0.5.1-blue.svg
