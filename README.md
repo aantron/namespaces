@@ -1,8 +1,8 @@
-*This project is **not supported** for the time being. The right thing to do
-with it is to port it to [codept][codept]; however, I don't have the time to do
-this right now. You are welcome to take over and do this.*
+*This project is **not supported** for the time being. Similar behaviour may be
+possible using [codept][codept] [v0.10][codept-0.10]'s `-nested` feature.*
 
 [codept]: https://github.com/octachron/codept
+[codept-0.10]: https://github.com/Octachron/codept/blob/master/Changelog.md#version-010
 
 # Namespaces &nbsp; [![version 0.5.1][version]][releases] [![BSD license][license-img]][license] [![Travis status][travis-img]][travis]
 
